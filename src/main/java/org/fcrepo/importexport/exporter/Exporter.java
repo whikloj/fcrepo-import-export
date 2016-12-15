@@ -26,6 +26,8 @@ import static org.apache.commons.codec.binary.Hex.encodeHex;
 import static org.apache.commons.io.FileUtils.byteCountToDisplaySize;
 import static org.apache.jena.rdf.model.ModelFactory.createDefaultModel;
 import static org.apache.jena.rdf.model.ResourceFactory.createProperty;
+import static org.fcrepo.importexport.common.FcrepoConstants.BAG_PROFILE_APTRUST;
+import static org.fcrepo.importexport.common.FcrepoConstants.BAG_PROFILE_APTRUST_FILE;
 import static org.fcrepo.importexport.common.FcrepoConstants.CONTAINER;
 import static org.fcrepo.importexport.common.FcrepoConstants.NON_RDF_SOURCE;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -87,7 +89,6 @@ import gov.loc.repository.bagit.writer.BagWriter;
 public class Exporter implements TransferProcess {
 
     private static final Logger logger = getLogger(Exporter.class);
-    private static final String APTRUST_INFO_TXT = "aptrust-info.txt";
 
     private Config config;
     protected FcrepoClient.FcrepoClientBuilder clientBuilder;
@@ -129,13 +130,11 @@ public class Exporter implements TransferProcess {
             try {
                 // parse profile
                 final URL url = this.getClass().getResource("/profiles/" + config.getBagProfile() + ".json");
-
-
-                final BagConfig bagConfig = loadBagConfig(config.getBagConfigPath());
-
-
                 final InputStream in = (url == null) ? new FileInputStream(config.getBagProfile()) : url.openStream();
                 bagProfile = new BagProfile(config.getBagProfile(), in);
+
+                final BagConfig bagConfig = loadBagConfig(config.getBagConfigPath());
+                bagConfig.validate(bagProfile);
 
                 // setup bag
                 final File bagdir = config.getBaseDirectory().getParentFile();
@@ -170,14 +169,11 @@ public class Exporter implements TransferProcess {
                     this.sha256 = MessageDigest.getInstance("SHA-256");
                 }
 
-                //enforce default metadata
-                validateProfile("default", bagProfile.getMetadataFields(), bag.getMetadata());
                 //enforce aptrust if applicable
-                final Map<String,String> aptrustInfo = bagConfig.getAPTrustInfo();
-                if (aptrustInfo != null && !aptrustInfo.isEmpty() && bagProfile.getAPTrustFields() != null) {
+                if (bagProfile.getName() == BAG_PROFILE_APTRUST) {
+                    final Map<String, String> aptrustInfo = bagConfig.getAPTrustInfo();
                     final LinkedHashMap<String, String> orderedFields = new LinkedHashMap<>(aptrustInfo);
-                    validateProfile("aptrust", bagProfile.getAPTrustFields(), orderedFields);
-                    writeAPTrustInfoFile(orderedFields);
+                    writeTagFile(orderedFields, BAG_PROFILE_APTRUST_FILE);
                 }
 
             } catch (NoSuchAlgorithmException e) {
@@ -188,9 +184,17 @@ public class Exporter implements TransferProcess {
         }
     }
 
-    private void writeAPTrustInfoFile(final LinkedHashMap<String, String> orderedFields) throws IOException {
-        final File aptrustBagInfo = new File(this.bag.getRootDir() + "/" + APTRUST_INFO_TXT);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(aptrustBagInfo))) {
+    /**
+     * Write the tags out
+     * 
+     * @param orderedFields the tags to write
+     * @param filename the filename to create
+     * @throws IOException
+     */
+    private void writeTagFile(final LinkedHashMap<String, String> orderedFields, final String filename)
+        throws IOException {
+        final File tagFile = new File(this.bag.getRootDir() + "/" + filename);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tagFile))) {
             for (String key : orderedFields.keySet()) {
                 writer.write(key + " : " + orderedFields.get(key) + "\n");
             }

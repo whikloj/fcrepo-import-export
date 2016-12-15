@@ -23,13 +23,10 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -49,52 +46,6 @@ public class BagProfileTest {
     private LinkedHashMap<String, String> fields = new LinkedHashMap<String, String>();
 
     private BagProfile profile;
-
-    static {
-        final Set<String> set = new HashSet<>();
-        set.add("value1");
-        set.add("value2");
-        set.add("value3");
-        rules.put(FIELD1, set);
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        profile = new BagProfile("test", new FileInputStream(testFile));
-    }
-
-    @Test
-    public void testEnforceValues() throws ProfileValidationException {
-        fields.put(FIELD1, "value1");
-        BagProfile.validate("profile-section", rules, fields);
-    }
-
-    @Test(expected = ProfileValidationException.class)
-    public void testEnforceValuesMissingRequired() throws ProfileValidationException {
-        fields.put("field2", "value1");
-        ProfileValidationUtil.validate("profile-section", rules, fields);
-    }
-
-    @Test(expected = ProfileValidationException.class)
-    public void testEnforceValuesInvalidValue() throws ProfileValidationException {
-        fields.put(FIELD1, "invalidValue");
-        ProfileValidationUtil.validate("profile-section", rules, fields);
-    }
-
-    @Test
-    public void testMultipleValidationErrorsInOneExceptionMessage() {
-        fields.put(FIELD1, "invalidValue");
-        rules.put(FIELD2, null);
-        fields.put("field3", "any value");
-        try {
-            ProfileValidationUtil.validate("profile-section", rules, fields);
-            Assert.fail("previous line should have failed.");
-        } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains(FIELD1));
-            Assert.assertTrue(e.getMessage().contains(FIELD2));
-            Assert.assertFalse(e.getMessage().contains("field3"));
-        }
-    }
 
     @Test
     public void testFromFile() throws Exception {

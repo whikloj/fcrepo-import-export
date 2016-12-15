@@ -38,7 +38,8 @@
       },
       "Bag-Size":{
          "tagFile": "bag-info.txt",
-         "required":true
+         "required":true,
+         "generated":true
       },
       "Bag-Group-Identifier":{
          "tagFile": "bag-info.txt",
@@ -58,11 +59,13 @@
       },
       "Bagging-Date":{
          "tagFile": "bag-info.txt",
-         "required":true
+         "required":true,
+         "generated":true
       },
       "Payload-Oxum":{
          "tagFile": "bag-info.txt",
-         "required":true
+         "required":true,
+         "generated":true
       }
    },
    "Manifests-Required":[

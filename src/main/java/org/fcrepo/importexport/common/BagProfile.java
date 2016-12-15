@@ -19,6 +19,7 @@ package org.fcrepo.importexport.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -38,8 +39,13 @@ public class BagProfile {
     private String profileName;
     private Set<String> payloadDigestAlgorithms;
     private Set<String> tagDigestAlgorithms;
-    private Map<String, Set<String>> metadataFields;
-    private Map<String, Set<String>> aptrustFields;
+
+    private Map<String, Set<String>> requiredFields = new HashMap<String, Set<String>>();
+
+    private Map<String, Set<String>> metadataFields = new HashMap<String, Set<String>>();
+
+    private Set<String> generatedFields = new HashSet<String>();
+    // private Map<String, Set<String>> aptrustFields;
 
     /**
      * Default constructor.
@@ -57,8 +63,23 @@ public class BagProfile {
             tagDigestAlgorithms = payloadDigestAlgorithms;
         }
 
-        metadataFields = metadataFields(json, "Metadata-Fields");
-        // aptrustFields = metadataFields(json, "APTrust-Info");
+        final String baseProfileName = json.get("baseProfile").asText();
+        if (baseProfileName != null) {
+            // Base Profiles are internal only for now.
+            final URL url = this.getClass().getResource("/profiles/" + baseProfileName + ".json");
+            if (url == null) {
+                throw new IOException(String.format("Unable to access baseProfile \"%s\"", baseProfileName));
+            }
+            final BagProfile baseProfile = new BagProfile(baseProfileName, url.openStream());
+            requiredFields = baseProfile.getRequiredFields();
+            generatedFields = baseProfile.getGeneratedFields();
+            metadataFields = baseProfile.getMetadataFields();
+        }
+
+        requiredFields.putAll(getRequiredFields(json));
+        metadataFields.putAll(getMetadataFields(json));
+        generatedFields.addAll(getGeneratedFields(json));
+
     }
 
     private static Set<String> arrayValues(final JsonNode json, final String key) {
@@ -75,8 +96,45 @@ public class BagProfile {
         return results;
     }
 
-    private static Map<String, Set<String>> metadataFields(final JsonNode json, final String key) {
-        final JsonNode fields = json.get(key);
+    /**
+     * Get a list of generated metadata fields, these can be subtracted from required to perform pre-export validation
+     *
+     * @param json the profile validation
+     * @return the list
+     */
+    private static Set<String> getGeneratedFields(final JsonNode json) {
+        return fieldGenerator(json, "generated").keySet().stream().collect(Collectors.toSet());
+    }
+
+    /**
+     * Get all required metadata fields and return them with a set of valid values.
+     *
+     * @param json the profile JSON
+     * @return the map
+     */
+    private static Map<String, Set<String>> getRequiredFields(final JsonNode json) {
+        return fieldGenerator(json, "required");
+    }
+
+    /**
+     * Get a map of all metadata fields and a set of valid values
+     *
+     * @param json the profile JSON
+     * @return the map
+     */
+    private static Map<String, Set<String>> getMetadataFields(final JsonNode json) {
+        return fieldGenerator(json, null);
+    }
+
+    /**
+     * Returns a map of fields with a set of valid values (if any)
+     *
+     * @param json the original json
+     * @param booleanKey a key to check for a true value or null for all fields
+     * @return the map
+     */
+    private static Map<String, Set<String>> fieldGenerator(final JsonNode json, final String booleanKey) {
+        final JsonNode fields = json.get("Metadata-Fields");
 
         if (fields == null) {
             return null;
@@ -86,13 +144,14 @@ public class BagProfile {
         for (final java.util.Iterator<String> it = fields.fieldNames(); it.hasNext(); ) {
             final String name = it.next();
             final JsonNode field = fields.get(name);
-            if (field.get("required").asBoolean()) {
+            if (booleanKey == null || (field.get(booleanKey) != null && field.get(booleanKey).asBoolean())) {
                 results.put(name, arrayValues(field, "values"));
             }
         }
 
         return results;
     }
+
 
     /**
      * Get the required digest algorithms for payload manifests.
@@ -118,14 +177,20 @@ public class BagProfile {
         return metadataFields;
     }
 
+    public Map<String, Set<String>> getRequiredFields() {
+        return requiredFields;
+    }
+
+    public Set<String> getGeneratedFields() {
+        return generatedFields;
+    }
+
     /**
      * Get the required APTrust-Info metadata fields.
      * @return A map of field names to a Set of acceptable values (or null when the values are restricted),
      *    or null when no APTrust-Info fields are required.
      */
-    public Map<String, Set<String>> getAPTrustFields() {
-        return aptrustFields;
-    }
+
 
     /**
      * Validates the fields against the set of required fields and their constrained values.
@@ -163,5 +228,14 @@ public class BagProfile {
             }
         }
 
+    }
+
+    /**
+     * Get the profileName or filename
+     *
+     * @return the name or path to external file
+     */
+    public String getName() {
+        return profileName;
     }
 }

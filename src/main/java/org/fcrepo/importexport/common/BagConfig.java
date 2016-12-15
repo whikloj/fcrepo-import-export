@@ -24,8 +24,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 
@@ -85,11 +85,6 @@ public class BagConfig {
         try {
             reader = new YamlReader(new FileReader(bagConfigFile));
             map = (Map<String, Map<String, String>>) reader.read();
-            if (getBagInfo() == null) {
-                throw new RuntimeException("The " + BAG_INFO_KEY + " key is not present in the " + bagConfigFilePath);
-            }
-
-            validateAPTrust(getAPTrustInfo());
         } catch (FileNotFoundException e) {
             throw new RuntimeException("The specified bag config file does not exist: " + bagConfigFile
                     .getAbsolutePath());
@@ -105,17 +100,16 @@ public class BagConfig {
         }
     }
 
-    private void validateAPTrust(final Map<String, String> apTrustInfo) {
-        final String access = apTrustInfo.get(ACCESS_KEY);
-        if (access != null) {
-            try {
-                AccessTypes.valueOf(access.toUpperCase());
-            } catch (Exception ex) {
-                throw new RuntimeException(ACCESS_KEY + " must be one of the following values: " + StringUtils.join(
-                        AccessTypes
-                                .values(), ","));
+    public boolean validate(final BagProfile profile) {
+        final Set<String> generated = profile.getGeneratedFields();
+        for (final Map.Entry<String, Set<String>> entries : profile.getRequiredFields().entrySet()) {
+            if (!generated.contains(entries.getKey()) &&
+                (!map.containsKey(entries.getKey()) ||
+                    !entries.getValue().contains(map.get(entries.getKey())))) {
+                throw new RuntimeException(String.format("Required field \"%s\" must be one of the following: %s", entries.getKey(), entries.getValue().stream().collect(Collectors.joining(","))));
             }
         }
+        return true;
     }
 
     /**
