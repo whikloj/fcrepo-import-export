@@ -22,7 +22,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -31,10 +38,68 @@ import org.junit.Test;
  */
 public class BagProfileTest {
 
+    private static final String FIELD1 = "field1";
+
+    private static final String FIELD2 = "field2";
+
+    private static final Map<String, Set<String>> rules = new HashMap<String, Set<String>>();
+
+    final static File testFile = new File("src/test/resources/profiles/test.json");
+
+    private LinkedHashMap<String, String> fields = new LinkedHashMap<String, String>();
+
+    private BagProfile profile;
+
+    static {
+        final Set<String> set = new HashSet<>();
+        set.add("value1");
+        set.add("value2");
+        set.add("value3");
+        rules.put(FIELD1, set);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        profile = new BagProfile("test", new FileInputStream(testFile));
+    }
+
+    @Test
+    public void testEnforceValues() throws ProfileValidationException {
+        fields.put(FIELD1, "value1");
+        BagProfile.validate("profile-section", rules, fields);
+    }
+
+    @Test(expected = ProfileValidationException.class)
+    public void testEnforceValuesMissingRequired() throws ProfileValidationException {
+        fields.put("field2", "value1");
+        ProfileValidationUtil.validate("profile-section", rules, fields);
+    }
+
+    @Test(expected = ProfileValidationException.class)
+    public void testEnforceValuesInvalidValue() throws ProfileValidationException {
+        fields.put(FIELD1, "invalidValue");
+        ProfileValidationUtil.validate("profile-section", rules, fields);
+    }
+
+    @Test
+    public void testMultipleValidationErrorsInOneExceptionMessage() {
+        fields.put(FIELD1, "invalidValue");
+        rules.put(FIELD2, null);
+        fields.put("field3", "any value");
+        try {
+            ProfileValidationUtil.validate("profile-section", rules, fields);
+            Assert.fail("previous line should have failed.");
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains(FIELD1));
+            Assert.assertTrue(e.getMessage().contains(FIELD2));
+            Assert.assertFalse(e.getMessage().contains("field3"));
+        }
+    }
+
     @Test
     public void testFromFile() throws Exception {
         final File testFile = new File("src/test/resources/profiles/test.json");
-        final BagProfile profile = new BagProfile(new FileInputStream(testFile));
+        final BagProfile profile = new BagProfile("test", new FileInputStream(testFile));
 
         assertTrue(profile.getPayloadDigestAlgorithms().contains("md5"));
         assertTrue(profile.getPayloadDigestAlgorithms().contains("sha1"));
@@ -53,11 +118,11 @@ public class BagProfileTest {
         assertTrue(profile.getMetadataFields().keySet().contains("Payload-Oxum"));
         assertFalse(profile.getMetadataFields().keySet().contains("Contact-Email"));
 
-        assertTrue(profile.getAPTrustFields().keySet().contains("Title"));
-        assertTrue(profile.getAPTrustFields().keySet().contains("Access"));
-        assertTrue(profile.getAPTrustFields().get("Access").contains("Consortia"));
-        assertTrue(profile.getAPTrustFields().get("Access").contains("Institution"));
-        assertTrue(profile.getAPTrustFields().get("Access").contains("Restricted"));
+        assertTrue(profile.getMetadataFields().keySet().contains("Title"));
+        assertTrue(profile.getMetadataFields().keySet().contains("Access"));
+        assertTrue(profile.getMetadataFields().get("Access").contains("Consortia"));
+        assertTrue(profile.getMetadataFields().get("Access").contains("Institution"));
+        assertTrue(profile.getMetadataFields().get("Access").contains("Restricted"));
     }
 
     public void testexport() {

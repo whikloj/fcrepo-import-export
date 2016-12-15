@@ -7,47 +7,61 @@
       "External-Description":"Default Bag Profile for Fedora.",
       "Version":"1.2"
    },
-   "Bag-Info":{
+   "Metadata-Fields":{
       "Source-Organization":{
+         "tagFile": "bag-info.txt",
          "required":true
       },
       "Organization-Address":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Contact-Name":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Contact-Phone":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Contact-Email":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "External-Description":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "External-Identifier":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Bag-Size":{
+         "tagFile": "bag-info.txt",
          "required":true
       },
       "Bag-Group-Identifier":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Bag-Count":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Internal-Sender-Identifier":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Internal-Sender-Description":{
+         "tagFile": "bag-info.txt",
          "required":false
       },
       "Bagging-Date":{
+         "tagFile": "bag-info.txt",
          "required":true
       },
       "Payload-Oxum":{
+         "tagFile": "bag-info.txt",
          "required":true
       }
    },

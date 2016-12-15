@@ -63,7 +63,6 @@ import org.fcrepo.importexport.common.BagConfig;
 import org.fcrepo.importexport.common.BagProfile;
 import org.fcrepo.importexport.common.Config;
 import org.fcrepo.importexport.common.ProfileValidationException;
-import org.fcrepo.importexport.common.ProfileValidationUtil;
 import org.fcrepo.importexport.common.ResourceNotFoundRuntimeException;
 import org.fcrepo.importexport.common.TransferProcess;
 
@@ -105,6 +104,8 @@ public class Exporter implements TransferProcess {
     private Manifest sha1TagManifest = null;
     private Manifest sha256TagManifest = null;
 
+    private BagProfile bagProfile;
+
     private Logger exportLogger;
     private SimpleDateFormat dateFormat;
     private AtomicLong successCount = new AtomicLong(); // set to zero at start
@@ -134,7 +135,7 @@ public class Exporter implements TransferProcess {
 
 
                 final InputStream in = (url == null) ? new FileInputStream(config.getBagProfile()) : url.openStream();
-                final BagProfile bagProfile = new BagProfile(in);
+                bagProfile = new BagProfile(config.getBagProfile(), in);
 
                 // setup bag
                 final File bagdir = config.getBaseDirectory().getParentFile();
@@ -211,7 +212,7 @@ public class Exporter implements TransferProcess {
 
     protected void validateProfile(final String profileSection, final Map<String, Set<String>> requiredFields,
             final LinkedHashMap<String, String> fields) throws ProfileValidationException {
-        ProfileValidationUtil.validate(profileSection, requiredFields, fields);
+        bagProfile.validate(fields);
     }
 
     private FcrepoClient client() {

@@ -7,7 +7,7 @@
       "External-Description":"Test Bag Profile for Fedora.",
       "Version":"0.1"
    },
-   "Bag-Info":{
+   "Metadata-Fields":{
       "Source-Organization":{
          "required":true
       },
@@ -49,10 +49,8 @@
       },
       "Payload-Oxum":{
          "required":true
-      }
-   },
-   "APTrust-Info":{
-      "Title":{
+      },
+	  "Title":{
          "required":true
       },
       "Access":{

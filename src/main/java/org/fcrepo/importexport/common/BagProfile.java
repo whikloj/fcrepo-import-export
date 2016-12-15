@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class BagProfile {
 
+    private String profileName;
     private Set<String> payloadDigestAlgorithms;
     private Set<String> tagDigestAlgorithms;
     private Map<String, Set<String>> metadataFields;
@@ -43,7 +46,8 @@ public class BagProfile {
      * @param in InputStream containing the Bag profile JSON document
      * @throws IOException when there is an I/O error reading JSON
      */
-    public BagProfile(final InputStream in) throws IOException {
+    public BagProfile(final String profileName, final InputStream in) throws IOException {
+        this.profileName = profileName;
         final ObjectMapper mapper = new ObjectMapper();
         final JsonNode json = mapper.readTree(in);
 
@@ -53,8 +57,8 @@ public class BagProfile {
             tagDigestAlgorithms = payloadDigestAlgorithms;
         }
 
-        metadataFields = metadataFields(json, "Bag-Info");
-        aptrustFields = metadataFields(json, "APTrust-Info");
+        metadataFields = metadataFields(json, "Metadata-Fields");
+        // aptrustFields = metadataFields(json, "APTrust-Info");
     }
 
     private static Set<String> arrayValues(final JsonNode json, final String key) {
@@ -121,5 +125,43 @@ public class BagProfile {
      */
     public Map<String, Set<String>> getAPTrustFields() {
         return aptrustFields;
+    }
+
+    /**
+     * Validates the fields against the set of required fields and their constrained values.
+     *
+     * @param profileSection describes the section of the profile that is being validated.
+     * @param requiredFields the required fields and any allowable values (if constrained).
+     * @param fields The key value pairs to be validated.
+     * @throws ProfileValidationException when the fields do not pass muster. The exception message contains a
+     *         description of all validation errors found.
+     */
+    public void validate(final LinkedHashMap<String, String> fields) throws ProfileValidationException {
+
+        if (metadataFields != null) {
+            final StringBuilder errors = new StringBuilder();
+
+            for (String fieldName : metadataFields.keySet()) {
+                if (fields.containsKey(fieldName)) {
+                    final String value = fields.get(fieldName);
+                    final Set<String> validValues = metadataFields.get(fieldName);
+                    if (validValues != null && !validValues.isEmpty()) {
+                        if (!validValues.contains(value)) {
+                            errors.append(String.format(
+                                "\"%s\" is not valid for %s. Valid values are \"%s\"", profileName, value,
+                                fieldName, validValues.stream().collect(Collectors.joining(","))));
+                        }
+                    }
+
+                } else {
+                    errors.append(String.format("\"%s\" is a required field.", profileName, fieldName));
+                }
+            }
+
+            if (errors.length() > 0) {
+                throw new ProfileValidationException(profileName, errors.toString());
+            }
+        }
+
     }
 }

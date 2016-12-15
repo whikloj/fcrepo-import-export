@@ -22,6 +22,7 @@ package org.fcrepo.importexport.common;
  * A profile validation exception.
  *
  * @author Daniel Bernstein
+ * @author whikloj
  * @since Dec 14, 2016
  */
 public class ProfileValidationException extends Exception {
@@ -33,7 +34,8 @@ public class ProfileValidationException extends Exception {
      *
      * @param message The error message
      */
-    public ProfileValidationException(final String message) {
-        super(message);
+    public ProfileValidationException(final String profileName, final String message) {
+        super(String.format("Bag profile (%s) validation failure: The following errors occurred\n%s", profileName,
+            message));
     }
 }

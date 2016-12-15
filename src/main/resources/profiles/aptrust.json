@@ -7,55 +7,26 @@
       "External-Description":"Bag Profile for Fedora and APTrust.",
       "Version":"1.2"
    },
-   "Bag-Info":{
-      "Source-Organization":{
-         "required":true
-      },
-      "Organization-Address":{
-         "required":false
-      },
-      "Contact-Name":{
-         "required":false
-      },
-      "Contact-Phone":{
-         "required":false
-      },
-      "Contact-Email":{
-         "required":false
-      },
-      "External-Description":{
-         "required":false
-      },
-      "External-Identifier":{
-         "required":false
-      },
-      "Bag-Size":{
-         "required":true
-      },
-      "Bag-Group-Identifier":{
-         "required":false
-      },
+   "Metadata-Fields":{
+      "BaseProfile":"default",
       "Bag-Count":{
-         "required":false
+         "tagFile": "bag-info.txt",
+         "required":true
       },
       "Internal-Sender-Identifier":{
-         "required":false
+         "tagFile": "bag-info.txt",
+         "required":true
       },
       "Internal-Sender-Description":{
-         "required":false
-      },
-      "Bagging-Date":{
+         "tagFile": "bag-info.txt",
          "required":true
       },
-      "Payload-Oxum":{
-         "required":true
-      }
-   },
-   "APTrust-Info":{
       "Title":{
+         "tagFile":"aptrust-info.txt",
          "required":true
       },
       "Access":{
+         "tagFile":"aptrust-info.txt",
          "required":true,
          "values":["Consortia","Institution","Restricted"]
       }

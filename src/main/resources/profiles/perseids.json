@@ -7,13 +7,8 @@
       "External-Description":"BagIt profile for Research Objects. See https://w3id.org/ro/bagit",
       "Version":"0.2.20160422"
    },
-   "Bag-Info": {
-      "Bag-Size": {
-         "required":true
-      },
-      "Payload-Oxum": {
-         "required":true
-      }
+   "Metadata-Fields": {
+      "baseProfile":"default"
    },
    "Manifests-Required":[
       "md5", "sha1"
